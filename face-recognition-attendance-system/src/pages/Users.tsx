@@ -42,7 +42,7 @@ import AddUserModal from "@/components/AddUserModal";
 import type { DateRange } from "react-day-picker";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
-import { addUser, fetchAllEmployees } from "@/service/employee";
+import { addUser, deleteUser, fetchAllEmployees } from "@/service/employee";
 import { useToast } from "@/hooks/use-toast";
 const humanConfig: any = {
   modelBasePath: "/models",
@@ -128,14 +128,14 @@ export default function Users() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [showDateFilter, setShowDateFilter] = useState(false);
   const [human, setHuman] = useState(null);
-    const { toast } = useToast()
-    const [dataChange, setDataChange] = useState(false);
-    const [count, setCounts] = useState(0)
+  const { toast } = useToast();
+  const [dataChange, setDataChange] = useState(false);
+  const [count, setCounts] = useState(0);
 
   const filteredUsers = users?.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      user.email.toLowerCase().includes(searchTerm.toLowerCase());
 
     // const matchesDateRange =
     //   !dateRange?.from ||
@@ -147,25 +147,24 @@ export default function Users() {
     // return matchesSearch && matchesDateRange;
   });
 
-   useEffect(() => {
-      const initHuman = async () => {
-        const h = new Human(humanConfig);
-        await h.load();
-        setHuman(h);
-      };
-      initHuman();
-    }, []);
+  useEffect(() => {
+    const initHuman = async () => {
+      const h = new Human(humanConfig);
+      await h.load();
+      setHuman(h);
+    };
+    initHuman();
+  }, []);
 
   const handleAddUser = async (newUser: any) => {
     const formData = new FormData();
 
-    formData.append("name", newUser.name)
-    formData.append("email", newUser.email)
-    formData.append("department", newUser.department)
-    formData.append("designation", newUser.designation)
-    formData.append("photo", newUser.photo)
-    formData.append("type", newUser.type)
-    
+    formData.append("name", newUser.name);
+    formData.append("email", newUser.email);
+    formData.append("department", newUser.department);
+    formData.append("designation", newUser.designation);
+    formData.append("photo", newUser.photo);
+    formData.append("type", newUser.type);
 
     const img = new Image();
     img.src = URL.createObjectURL(newUser.photo);
@@ -174,17 +173,17 @@ export default function Users() {
     const res = await human.detect(img);
     if (res.face.length > 0) {
       const embedding = res.face[0].embedding;
-      formData.append("embedding", embedding)
+      formData.append("embedding", embedding);
     }
     URL.revokeObjectURL(img.src);
-    
+
     const response = await addUser(formData);
-    if(response.success) {
-      setDataChange(!dataChange)
+    if (response.success) {
+      setDataChange(!dataChange);
       toast({
         title: response.message,
-        variant: "default"
-      })
+        variant: "default",
+      });
     }
     setShowAddModal(false);
   };
@@ -192,7 +191,7 @@ export default function Users() {
   useEffect(() => {
     fetchAllEmployees().then((res) => {
       setUsers(res.employees);
-      setCounts(res.count)
+      setCounts(res.count);
     });
   }, [dataChange]);
 
@@ -222,6 +221,11 @@ export default function Users() {
     }
   };
 
+  const deleteEmployee = (id) => {
+    setUsers(users.filter((user: any) => user._id !== id));
+    deleteUser(id);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -246,7 +250,11 @@ export default function Users() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: "Total Users", value: count || users.length, color: "stat-blue" },
+          {
+            label: "Total Users",
+            value: users.length,
+            color: "stat-blue",
+          },
         ].map((stat, index) => (
           <Card
             key={index}
@@ -383,11 +391,14 @@ export default function Users() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
+                          {/* <DropdownMenuItem>
                             <Edit className="h-4 w-4 mr-2" />
                             Edit User
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                          </DropdownMenuItem> */}
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => deleteEmployee(user._id)}
+                          >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Delete User
                           </DropdownMenuItem>

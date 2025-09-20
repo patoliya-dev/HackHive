@@ -25,3 +25,15 @@ export const addUser = async (formData) => {
     throw e;
   }
 };
+
+export const deleteUser = async (employeeId) => {
+  try {
+    const res = await axios.delete(
+      `http://localhost:3000/api/employees/delete?employeeId=${employeeId}`,
+    );
+    return res.data;
+  } catch (e) {
+    console.error("Error: ", e);
+    throw e;
+  }
+};
