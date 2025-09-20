@@ -1,11 +1,6 @@
 const mongoose = require('mongoose');
 
 const EmployeeSchema = new mongoose.Schema({
-  employeeId: {
-    type: String,
-    required: true,
-    unique: true,
-  },
   name: { 
     type: String, 
     required: true 
@@ -29,12 +24,24 @@ const EmployeeSchema = new mongoose.Schema({
     enum: ["ADMIN", "EMPLOYEE"],
     required: true, 
   },
+  embedding: {
+    type: Array,
+    default: []
+  },
   photo: {
     type: String,
   },
   createdAt: { 
     type: Date, 
     default: Date.now 
+  },
+  updatedAt: {
+    type: Date, 
+    default: null
+  },
+  isDeleted: {
+    type: Boolean, 
+    default: false
   }
 });
 
