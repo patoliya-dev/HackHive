@@ -185,13 +185,9 @@ export default function Attendance() {
     const todayStr = formatDate(today);
     const sevenDaysAgoStr = formatDate(sevenDaysAgo);
 
-    console.log("Today:", todayStr); // e.g. "2025-09-19"
-    console.log("7 Days Ago:", sevenDaysAgoStr); // e.g. "2025-09-12"
-
     const startDate = convertTODate(dateRange?.from || sevenDaysAgoStr);
     const endDate = convertTODate(dateRange?.to || todayStr);
     fetchAttendance(startDate, endDate).then((res) => {
-      console.log("sdfsdfsdfs", res.data);
       setAttendance(res.data);
       // setCounts(res.count)
     });
