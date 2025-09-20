@@ -1,12 +1,14 @@
-import axios from 'axios';
+import axios from "axios";
 
 // Function that takes URL and params as input
-export const fetchAllEmployees = async () => {
+export const markAttendance = async (employeeId) => {
   try {
-    const response = await axios.get('http://localhost:3000/api/employees/');
+    const response = await axios.post("http://localhost:3000/api/attendances", {
+      employeeId,
+    });
     return response.data; // Return the data for further use
   } catch (error) {
-    console.error('Error fetching data:', error);
+    console.error("Error fetching data:", error);
     throw error; // Optionally rethrow or handle here
   }
 };

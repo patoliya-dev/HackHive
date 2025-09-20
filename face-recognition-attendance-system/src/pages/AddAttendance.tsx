@@ -13,6 +13,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 // cSpell: ignore vladmandic
 import Human from "@vladmandic/human";
+import { fetchAllEmployees } from "@/service/employee";
 
 const humanConfig: any = {
   modelBasePath: "/models",
@@ -40,6 +41,11 @@ export default function AddAttendance() {
   const [matchResult, setMatchResult] = useState<string>("");
   const imgRef = useRef(null);
 
+  const getAllEmployees = async () => {
+    const employees = await fetchAllEmployees();
+    console.log("employees : ",employees)
+  }
+
   useEffect(() => {
     const initHuman = async () => {
       const h = new Human(humanConfig);
@@ -47,6 +53,7 @@ export default function AddAttendance() {
       setHuman(h);
     };
     initHuman();
+    getAllEmployees()
   }, []);
 
   const handleAddImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
