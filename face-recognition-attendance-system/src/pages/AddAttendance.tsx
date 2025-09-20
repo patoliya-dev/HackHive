@@ -71,7 +71,8 @@ export default function AddAttendance() {
       const dataArrayNormal = Array.from(dataArray); // convert to number[]
       const distance = euclideanDistance(uploadedEmbedding, dataArrayNormal);
       if (distance < threshold) {
-        const response: any = markAttendance(employee?._id);
+        const response: any = await markAttendance(employee?._id);
+        console.log("Response : ",response)
         if (response.success) {
           toast({
             title: `Attendance marked successfully for ${employee?.name}`,
