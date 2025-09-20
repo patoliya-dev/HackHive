@@ -130,7 +130,6 @@ export default function Users() {
   const [human, setHuman] = useState(null);
     const { toast } = useToast()
     const [dataChange, setDataChange] = useState(false);
-    console.log("users", users)
     const [count, setCounts] = useState(0)
 
   const filteredUsers = users?.filter((user) => {
@@ -176,14 +175,10 @@ export default function Users() {
     if (res.face.length > 0) {
       const embedding = res.face[0].embedding;
       formData.append("embedding", embedding)
-      console.log("Stored image added with embedding");
-    } else {
-      console.log("No face detected in uploaded image");
     }
     URL.revokeObjectURL(img.src);
     
     const response = await addUser(formData);
-    console.log("resss", response)
     if(response.success) {
       setDataChange(!dataChange)
       toast({

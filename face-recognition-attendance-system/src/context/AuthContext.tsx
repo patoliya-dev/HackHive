@@ -11,7 +11,6 @@ export const AuthProvider = ({ children }) => {
   // Load credentials from session storage on mount
   useEffect(() => {
     const storedUser = sessionStorage.getItem('user');
-    console.log("userssss", storedUser)
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }

@@ -27,7 +27,6 @@ export default function Login() {
     } else {
         alert("Invalid creds!!")
     }
-    console.log("Login attempt:", formData);
   }
 
   return (

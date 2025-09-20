@@ -33,7 +33,6 @@ export default function AddUserModal({ open, onOpenChange, onAddUser }: AddUserM
     type: "",
     image: null as File | null
   })
-  console.log("form-->", formData)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [showCamera, setShowCamera] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
