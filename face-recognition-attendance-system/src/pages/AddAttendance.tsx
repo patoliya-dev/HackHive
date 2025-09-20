@@ -29,9 +29,9 @@ export default function AddAttendance() {
   const { toast } = useToast();
 
   const getAllEmployees = async () => {
-    const employees = await fetchAllEmployees();
-    if (Array.isArray(employees) && employees.length > 0)
-      setEmployeeList(employees);
+    const response = await fetchAllEmployees();
+    if (Array.isArray(response?.employees) && response?.employees.length > 0)
+      setEmployeeList(response?.employees);
   };
 
   useEffect(() => {
