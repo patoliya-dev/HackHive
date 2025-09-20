@@ -223,12 +223,23 @@ export default function Attendance() {
     if (!data || !data.length) return;
 
     const headers = Object.keys(data[0]);
-    const csvRows = [
-      headers.join(","), // header row first
-      ...data.map((row) =>
-        headers.map((field) => `"${(row as any)[field]}"`).join(",")
-      ),
-    ];
+     const csvRows = [
+    headers.join(","), // header row first
+    ...data.map((row) =>
+      headers.map((field) => {
+        const value = row[field];
+
+        // Check if value is an object
+        if (value && typeof value === "object" && !Array.isArray(value)) {
+          // Take the first key's value
+          const firstKey = Object.keys(value)[0];
+          return `"${value[firstKey]}"`;
+        }
+
+        return `"${value}"`;
+      }).join(",")
+    ),
+  ];
 
     const csvString = csvRows.join("\n");
     const blob = new Blob([csvString], { type: "text/csv" });
