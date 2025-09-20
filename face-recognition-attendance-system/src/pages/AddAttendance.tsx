@@ -25,6 +25,7 @@ export default function AddAttendance() {
   const [employeeList, setEmployeeList] = useState([]);
   const [human, setHuman] = useState(null);
   const imgRef = useRef(null);
+  const [uploadImageProcessing, setUploadImageProcessing] = useState(false);
   const { toast } = useToast();
 
   const getAllEmployees = async () => {
@@ -52,6 +53,7 @@ export default function AddAttendance() {
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
+    setUploadImageProcessing(true);
     const file = event.target.files?.[0];
     if (!file || !human || employeeList.length === 0) return;
 
@@ -63,6 +65,7 @@ export default function AddAttendance() {
 
     const uploadedEmbedding = res.face[0].embedding;
     const threshold = 0.6;
+    let isSuccess = false;
 
     for (const employee of employeeList) {
       const dataArray = new Float32Array(
@@ -72,8 +75,8 @@ export default function AddAttendance() {
       const distance = euclideanDistance(uploadedEmbedding, dataArrayNormal);
       if (distance < threshold) {
         const response: any = await markAttendance(employee?._id);
-        console.log("Response : ",response)
         if (response.success) {
+          isSuccess = true;
           toast({
             title: `Attendance marked successfully for ${employee?.name}`,
             variant: "default",
@@ -81,7 +84,13 @@ export default function AddAttendance() {
         }
       }
     }
-
+    if (!isSuccess) {
+      toast({
+        title: `No employee found`,
+        variant: "default",
+      });
+    }
+    setUploadImageProcessing(false);
     URL.revokeObjectURL(img.src);
   };
 
@@ -129,8 +138,10 @@ export default function AddAttendance() {
               <Button
                 onClick={() => document.getElementById("file-upload")?.click()}
                 className="bg-gradient-primary hover:opacity-90"
+                disabled={uploadImageProcessing}
               >
-                Choose Files
+                Choose Files{" "}
+                {uploadImageProcessing && <span className="ms-2 loader"></span>}
               </Button>
             </div>
           </CardContent>
