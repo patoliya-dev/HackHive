@@ -13,6 +13,7 @@ exports.getEmployee = async (req, res) => {
       dateFilter.createdAt = {};
       if (startDate) dateFilter.createdAt.$gte = new Date(startDate);
       if (endDate) dateFilter.createdAt.$lte = new Date(endDate);
+      dateFilter['isDeleted'] = false
     }
 
     const employees = await Employee.find(dateFilter, {
@@ -27,7 +28,7 @@ exports.getEmployee = async (req, res) => {
       for (let i = 0; i < employees.length; i++) {
         const element = employees[i];
         if (element.photo) {
-          const fileNameParts = element.photo.split("/"); 
+          const fileNameParts = element.photo.split("/");
           const fileName = fileNameParts[fileNameParts.length - 1];
           const filePath = path.join(localDirectory, fileName);
 
@@ -43,7 +44,9 @@ exports.getEmployee = async (req, res) => {
       }
     }
 
-    res.json(employees);
+    const employeeCount = await Employee.countDocuments()
+
+    res.json({ employees, count: employeeCount });
   } catch (error) {
     res.status(500).json({ message: "Server Error" });
   }
@@ -72,7 +75,7 @@ exports.createEmployee = async (req, res) => {
       if (user && user._id) {
         res.json({
           success: true,
-          message: 'File uploaded successfully',
+          message: 'Employee created successfully',
         });
       } else {
         return res.status(400).json({ success: false, message: 'Failed to crate employee' });
@@ -85,29 +88,73 @@ exports.createEmployee = async (req, res) => {
 
 exports.updateEmployee = async (req, res) => {
   try {
-    const { employeeId } = req.query;
+    const upload = uploadFile('./uploads', 'photo', ['image/jpeg', 'image/png']);
 
+    upload(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({ success: false, message: err.message });
+      }
 
+      const { employeeId } = req.query;
+      const { name, department, designation, type, embedding } = req.body;
 
-    res.json({ success: true, message: 'Failed to delete employee' });
+      const employeedata = {
+        name,
+        department,
+        designation,
+        type,
+        embedding,
+      };
+
+      if (req.file) {
+        employeedata.photo = `/uploads/${req.file.filename}`;
+      }
+
+      const employee = await Employee.findOne({
+        _id: employeeId,
+        isDeleted: false,
+      });
+
+      if (!employee) {
+        return res.status(404).json({ success: false, message: 'Employee does not exist' });
+      }
+
+      const result = await Employee.updateOne(
+        { _id: employeeId },
+        { $set: employeedata }
+      );
+
+      if (result.modifiedCount > 0) {
+        return res.json({
+          success: true,
+          message: 'Employee updated successfully',
+        });
+      } else {
+        return res.status(400).json({ success: false, message: 'Failed to update employee' });
+      }
+    });
   } catch (error) {
-    res.status(400).json({ message: "Invalid DatServer Errora" });
+    return res.status(500).json({ success: false, message: "Server Error" });
   }
-}
+};
 
 exports.deleteEmployee = async (req, res) => {
   try {
     const { employeeId } = req.query;
 
-    const employees = await Employee.find(dateFilter, {
-      password: 0,
-      type: 0,
-      updatedAt: 0,
-      isDeleted: 0,
-      __v: 0
+    const employees = await Employee.findOneAndUpdate({
+      _id: employeeId,
+      type: "EMPLOYEE",
+    }, {
+      isDeleted: true,
+      updatedAt: new Date(),
     });
 
-    res.json({ success: true, message: 'Failed to delete employee' });
+    if (!employees) {
+      res.json({ success: false, message: 'Failed to delete employee' });
+    } else {
+      res.json({ success: true, message: 'Delete employee successfully' });
+    }
   } catch (error) {
     res.status(400).json({ message: "Invalid DatServer Errora" });
   }
