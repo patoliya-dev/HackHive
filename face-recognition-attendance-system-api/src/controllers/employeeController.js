@@ -144,7 +144,6 @@ exports.deleteEmployee = async (req, res) => {
 
     const employees = await Employee.findOneAndUpdate({
       _id: employeeId,
-      type: "EMPLOYEE",
     }, {
       isDeleted: true,
       updatedAt: new Date(),
