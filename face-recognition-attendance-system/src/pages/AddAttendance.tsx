@@ -64,7 +64,7 @@ export default function AddAttendance() {
     const res = await human.detect(img);
 
     const uploadedEmbedding = res.face[0].embedding;
-    const threshold = 0.6;
+    const threshold = 8.9;
     let isSuccess = false;
 
     for (const employee of employeeList) {
