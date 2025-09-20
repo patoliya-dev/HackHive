@@ -19,7 +19,8 @@ exports.getEmployee = async (req, res) => {
       password: 0,
       type: 0,
       updatedAt: 0,
-      isDeleted: 0
+      isDeleted: 0,
+      __v: 0
     });
 
     if (employees && employees.length) {
@@ -81,3 +82,33 @@ exports.createEmployee = async (req, res) => {
     res.status(400).json({ message: "Invalid Data" });
   }
 };
+
+exports.updateEmployee = async (req, res) => {
+  try {
+    const { employeeId } = req.query;
+
+
+
+    res.json({ success: true, message: 'Failed to delete employee' });
+  } catch (error) {
+    res.status(400).json({ message: "Invalid DatServer Errora" });
+  }
+}
+
+exports.deleteEmployee = async (req, res) => {
+  try {
+    const { employeeId } = req.query;
+
+    const employees = await Employee.find(dateFilter, {
+      password: 0,
+      type: 0,
+      updatedAt: 0,
+      isDeleted: 0,
+      __v: 0
+    });
+
+    res.json({ success: true, message: 'Failed to delete employee' });
+  } catch (error) {
+    res.status(400).json({ message: "Invalid DatServer Errora" });
+  }
+}
