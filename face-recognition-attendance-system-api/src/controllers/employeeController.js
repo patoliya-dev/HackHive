@@ -44,7 +44,7 @@ exports.getEmployee = async (req, res) => {
       }
     }
 
-    const employeeCount = await Employee.countDocuments()
+    const employeeCount = await Employee.countDocuments({ isDeleted : false })
 
     res.json({ employees, count: employeeCount });
   } catch (error) {
@@ -156,6 +156,6 @@ exports.deleteEmployee = async (req, res) => {
       res.json({ success: true, message: 'Delete employee successfully' });
     }
   } catch (error) {
-    res.status(400).json({ message: "Invalid DatServer Errora" });
+    res.status(400).json({ message: "Server Error" });
   }
-}
+};

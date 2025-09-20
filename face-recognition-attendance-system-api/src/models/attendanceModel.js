@@ -4,7 +4,7 @@ const { Schema } = mongoose
 const EmployeeSchema = new mongoose.Schema({
   employeeId: {
     type: Schema.Types.ObjectId,
-    ref: "workspace",
+    ref: "Employee",
     required: true 
   },
   date: { 

@@ -14,7 +14,7 @@ const createAttendance = async (doc) => {
 
 const getAllAttendance = async (filter) => {
   try {
-    return attendanceModel.find(filter);
+    return attendanceModel.find(filter).populate("employeeId");
   } catch (error) {
     throw new Error(error.message);
   }
