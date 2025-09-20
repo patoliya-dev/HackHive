@@ -142,18 +142,11 @@ exports.deleteEmployee = async (req, res) => {
   try {
     const { employeeId } = req.query;
 
-    const employees = await Employee.findOneAndUpdate({
+    const employees = await Employee.findOneAndDelete({
       _id: employeeId,
-    }, {
-      isDeleted: true,
-      updatedAt: new Date(),
     });
 
-    if (!employees) {
-      res.json({ success: false, message: 'Failed to delete employee' });
-    } else {
-      res.json({ success: true, message: 'Delete employee successfully' });
-    }
+    res.json({ success: true, message: 'Delete employee successfully' });
   } catch (error) {
     res.status(400).json({ message: "Server Error" });
   }
