@@ -3,7 +3,7 @@ const attendanceService = require('../services/attendanceService');
 exports.getAttendanceReport = async (req, res) => {
   try {
     const AttendenceReport = await attendanceService.getAllAttendance();
-    res.json(AttendenceReport);
+    return res.status(400).json({ data: AttendenceReport,  success: false, message: 'Report get successfully' });
   } catch (error) {
     res.status(500).json({ message: "Server Error" });
   }
@@ -12,7 +12,7 @@ exports.getAttendanceReport = async (req, res) => {
 exports.createAttendance = async (req, res) => {
   try {
     const AttendenceReport = await attendanceService.createAttendance(req.body);
-    res.json(AttendenceReport);
+    return res.status(400).json({data: AttendenceReport, success: false, message: 'Report get successfully' });
   } catch (error) {
     res.status(500).json({ message: "Server Error" });
   }
