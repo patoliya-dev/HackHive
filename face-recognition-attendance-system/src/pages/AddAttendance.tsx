@@ -1,19 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  Users,
-  Calendar,
-  TrendingUp,
-  Activity,
-  Upload,
-  Camera,
-  FileImage,
-  Video,
-} from "lucide-react";
+import { Upload, Camera, FileImage, Video } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 // cSpell: ignore vladmandic
 import Human from "@vladmandic/human";
 import { fetchAllEmployees } from "@/service/employee";
+import { markAttendance } from "@/service/attendance";
+import { useToast } from "@/hooks/use-toast";
 
 const humanConfig: any = {
   modelBasePath: "/models",
@@ -27,24 +20,18 @@ const humanConfig: any = {
   hand: { enabled: true },
 };
 
-interface StoredImage {
-  id: number;
-  file: File;
-  name: string;
-  embedding?: number[];
-}
-
 export default function AddAttendance() {
   const [cameraActive, setCameraActive] = useState(false);
-  const [storedImages, setStoredImages] = useState<StoredImage[]>([]);
+  const [employeeList, setEmployeeList] = useState([]);
   const [human, setHuman] = useState(null);
-  const [matchResult, setMatchResult] = useState<string>("");
   const imgRef = useRef(null);
+  const { toast } = useToast();
 
   const getAllEmployees = async () => {
     const employees = await fetchAllEmployees();
-    console.log("employees : ",employees)
-  }
+    if (Array.isArray(employees) && employees.length > 0)
+      setEmployeeList(employees);
+  };
 
   useEffect(() => {
     const initHuman = async () => {
@@ -53,30 +40,8 @@ export default function AddAttendance() {
       setHuman(h);
     };
     initHuman();
-    getAllEmployees()
+    getAllEmployees();
   }, []);
-
-  const handleAddImage = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !human) return;
-
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
-    await img.decode();
-
-    const res = await human.detect(img);
-    if (res.face.length > 0) {
-      const embedding = res.face[0].embedding;
-      setStoredImages((prev) => [
-        ...prev,
-        { id: prev.length + 1, file, embedding, name: file?.name || "" },
-      ]);
-      console.log("Stored image added with embedding");
-    } else {
-      console.log("No face detected in uploaded image");
-    }
-    URL.revokeObjectURL(img.src);
-  };
 
   const euclideanDistance = (a: number[], b: number[]) => {
     let sum = 0;
@@ -88,41 +53,32 @@ export default function AddAttendance() {
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
-    if (!file || !human || storedImages.length === 0) return;
+    if (!file || !human || employeeList.length === 0) return;
 
     const img = new Image();
     img.src = URL.createObjectURL(file);
     await img.decode();
 
     const res = await human.detect(img);
-    if (res.face.length === 0) {
-      setMatchResult("No face detected");
-      return;
-    }
 
     const uploadedEmbedding = res.face[0].embedding;
-    let bestMatch: { id: number; distance: number; name: string } | null = null;
     const threshold = 0.6;
 
-    for (const stored of storedImages) {
-      if (!stored.embedding) continue;
-      const distance = euclideanDistance(uploadedEmbedding, stored.embedding);
-      if (
-        distance < threshold &&
-        (!bestMatch || distance < bestMatch.distance)
-      ) {
-        bestMatch = { id: stored.id, distance, name: stored.name };
-      }
-    }
-
-    if (bestMatch) {
-      setMatchResult(
-        `Matched Image ID: ${
-          bestMatch.name
-        }, Percentage : ${bestMatch.distance.toFixed(4)}`
+    for (const employee of employeeList) {
+      const dataArray = new Float32Array(
+        employee?.embedding[0]?.split(",").map(Number)
       );
-    } else {
-      setMatchResult("No match found");
+      const dataArrayNormal = Array.from(dataArray); // convert to number[]
+      const distance = euclideanDistance(uploadedEmbedding, dataArrayNormal);
+      if (distance < threshold) {
+        const response: any = markAttendance(employee?._id);
+        if (response.success) {
+          toast({
+            title: `Attendance marked successfully for ${employee?.name}`,
+            variant: "default",
+          });
+        }
+      }
     }
 
     URL.revokeObjectURL(img.src);
@@ -176,11 +132,6 @@ export default function AddAttendance() {
                 Choose Files
               </Button>
             </div>
-            {matchResult && (
-              <div>
-                <p>Faces detected: {matchResult}</p>
-              </div>
-            )}
           </CardContent>
         </Card>
 
