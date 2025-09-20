@@ -10,6 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import Logo from "../assets/FaceHive.svg"
 
 const navigationItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
@@ -29,12 +30,12 @@ export function AdminSidebar() {
       <SidebarContent className="bg-card border-r border-border">
         <div className="p-6 border-b border-border">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-              <LayoutDashboard className="w-5 h-5 text-white" />
+            <div className="w-8 h-8 flex items-center justify-center">
+              <img src={Logo} />
             </div>
             <div className="group-data-[collapsible=icon]:hidden">
-              <h2 className="font-semibold text-foreground">Admin Panel</h2>
-              <p className="text-xs text-muted-foreground">Management System</p>
+              <h2 className="font-semibold text-foreground">FaceHive</h2>
+              <p className="text-xs text-muted-foreground">Attendance Management System</p>
             </div>
           </div>
         </div>

@@ -11,9 +11,11 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { 
   Search, 
-  Calendar, 
+  Calendar as CalendarIcon, 
   Clock, 
   CheckCircle, 
   XCircle, 
@@ -28,6 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
+import type { DateRange } from "react-day-picker"
 
 // Sample attendance data
 const initialAttendance = [
@@ -103,11 +108,15 @@ export default function Attendance() {
   const [attendance, setAttendance] = useState(initialAttendance)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
+  const [showDateFilter, setShowDateFilter] = useState(false)
   
   const filteredAttendance = attendance.filter(record => {
     const matchesSearch = record.name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === "all" || record.status.toLowerCase() === statusFilter.toLowerCase()
-    return matchesSearch && matchesStatus
+    const matchesDateRange = !dateRange?.from || !dateRange?.to || 
+      (new Date(record.date) >= dateRange.from && new Date(record.date) <= dateRange.to)
+    return matchesSearch && matchesStatus && matchesDateRange
   })
 
   const getStatusColor = (status: string) => {
@@ -244,6 +253,46 @@ export default function Attendance() {
                   <SelectItem value="half day">Half Day</SelectItem>
                 </SelectContent>
               </Select>
+              <Popover open={showDateFilter} onOpenChange={setShowDateFilter}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <CalendarIcon className="h-4 w-4 mr-2" />
+                    {dateRange?.from ? (
+                      dateRange?.to ? (
+                        `${format(dateRange.from, "MMM dd")} - ${format(dateRange.to, "MMM dd")}`
+                      ) : (
+                        format(dateRange.from, "MMM dd, yyyy")
+                      )
+                    ) : (
+                      "Date Range"
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={dateRange?.from}
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={2}
+                    className="pointer-events-auto"
+                  />
+                  <div className="p-3 border-t border-border">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => {
+                        setDateRange(undefined)
+                        setShowDateFilter(false)
+                      }}
+                      className="w-full"
+                    >
+                      Clear Filter
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </CardHeader>

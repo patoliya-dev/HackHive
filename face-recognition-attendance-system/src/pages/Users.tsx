@@ -1,23 +1,60 @@
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table"
-import { Search, Plus, Edit, Trash2, Mail, Phone, MoreHorizontal } from "lucide-react"
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  Mail,
+  Phone,
+  MoreHorizontal,
+  Calendar as CalendarIcon,
+  Filter,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+// cSpell: ignore vladmandic
+import Human from "@vladmandic/human";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import AddUserModal from "@/components/AddUserModal";
+import type { DateRange } from "react-day-picker";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import { addUser } from "@/service/employee";
+import { useToast } from "@/hooks/use-toast";
+const humanConfig: any = {
+  modelBasePath: "/models",
+  face: {
+    enabled: true,
+    detector: { rotation: true },
+    mesh: {}, // object instead of boolean
+    emotion: true,
+  },
+  body: { enabled: true },
+  hand: { enabled: true },
+};
 
 // Sample user data
 const initialUsers = [
@@ -29,7 +66,7 @@ const initialUsers = [
     role: "Admin",
     status: "Active",
     joinDate: "2023-01-15",
-    avatar: "JD"
+    avatar: "JD",
   },
   {
     id: 2,
@@ -39,7 +76,7 @@ const initialUsers = [
     role: "Manager",
     status: "Active",
     joinDate: "2023-02-20",
-    avatar: "SW"
+    avatar: "SW",
   },
   {
     id: 3,
@@ -49,7 +86,7 @@ const initialUsers = [
     role: "Employee",
     status: "Inactive",
     joinDate: "2023-03-10",
-    avatar: "MC"
+    avatar: "MC",
   },
   {
     id: 4,
@@ -59,7 +96,7 @@ const initialUsers = [
     role: "Employee",
     status: "Active",
     joinDate: "2023-04-05",
-    avatar: "ED"
+    avatar: "ED",
   },
   {
     id: 5,
@@ -69,7 +106,7 @@ const initialUsers = [
     role: "Manager",
     status: "Active",
     joinDate: "2023-05-12",
-    avatar: "RJ"
+    avatar: "RJ",
   },
   {
     id: 6,
@@ -79,55 +116,122 @@ const initialUsers = [
     role: "Employee",
     status: "Pending",
     joinDate: "2023-06-18",
-    avatar: "LA"
-  }
-]
+    avatar: "LA",
+  },
+];
 
 export default function Users() {
-  const [users, setUsers] = useState(initialUsers)
-  const [searchTerm, setSearchTerm] = useState("")
-  
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.role.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const [users, setUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [showDateFilter, setShowDateFilter] = useState(false);
+  const [human, setHuman] = useState(null);
+    const { toast } = useToast()
+
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.role.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesDateRange =
+      !dateRange?.from ||
+      !dateRange?.to ||
+      (new Date(user.joinDate) >= dateRange.from &&
+        new Date(user.joinDate) <= dateRange.to);
+
+    return matchesSearch && matchesDateRange;
+  });
+
+   useEffect(() => {
+      const initHuman = async () => {
+        const h = new Human(humanConfig);
+        await h.load();
+        setHuman(h);
+      };
+      initHuman();
+    }, []);
+
+  const handleAddUser = async (newUser: any) => {
+    const formData = new FormData();
+
+    formData.append("name", newUser.name)
+    formData.append("email", newUser.email)
+    formData.append("department", newUser.department)
+    formData.append("designation", newUser.designation)
+    formData.append("photo", newUser.photo)
+    formData.append("type", newUser.type)
+    
+
+    const img = new Image();
+    img.src = URL.createObjectURL(newUser.photo);
+    await img.decode();
+
+    const res = await human.detect(img);
+    if (res.face.length > 0) {
+      const embedding = res.face[0].embedding;
+      formData.append("embedding", embedding)
+      console.log("Stored image added with embedding");
+    } else {
+      console.log("No face detected in uploaded image");
+    }
+    URL.revokeObjectURL(img.src);
+    
+    const response = await addUser(formData);
+    console.log("resss", response)
+    if(response.success) {
+      toast({
+        title: response.message,
+        variant: "default"
+      })
+    }
+    setShowAddModal(false);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Active":
-        return "bg-success text-success-foreground"
+        return "bg-success text-success-foreground";
       case "Inactive":
-        return "bg-destructive text-destructive-foreground"
+        return "bg-destructive text-destructive-foreground";
       case "Pending":
-        return "bg-warning text-warning-foreground"
+        return "bg-warning text-warning-foreground";
       default:
-        return "bg-secondary text-secondary-foreground"
+        return "bg-secondary text-secondary-foreground";
     }
-  }
+  };
 
   const getRoleColor = (role: string) => {
     switch (role) {
       case "Admin":
-        return "bg-primary text-primary-foreground"
+        return "bg-primary text-primary-foreground";
       case "Manager":
-        return "bg-admin-primary text-white"
+        return "bg-admin-primary text-white";
       case "Employee":
-        return "bg-secondary text-secondary-foreground"
+        return "bg-secondary text-secondary-foreground";
       default:
-        return "bg-muted text-muted-foreground"
+        return "bg-muted text-muted-foreground";
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">User Management</h2>
-          <p className="text-muted-foreground">Manage user accounts and permissions</p>
+          <h2 className="text-2xl font-bold text-foreground">
+            User Management
+          </h2>
+          <p className="text-muted-foreground">
+            Manage user accounts and permissions
+          </p>
         </div>
-        <Button className="bg-gradient-primary hover:opacity-90">
+        <Button
+          className="bg-gradient-primary hover:opacity-90"
+          onClick={() => setShowAddModal(true)}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add New User
         </Button>
@@ -137,13 +241,30 @@ export default function Users() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
           { label: "Total Users", value: users.length, color: "stat-blue" },
-          { label: "Active", value: users.filter(u => u.status === "Active").length, color: "stat-green" },
-          { label: "Inactive", value: users.filter(u => u.status === "Inactive").length, color: "stat-red" },
-          { label: "Pending", value: users.filter(u => u.status === "Pending").length, color: "stat-orange" },
+          {
+            label: "Active",
+            value: users.filter((u) => u.status === "Active").length,
+            color: "stat-green",
+          },
+          {
+            label: "Inactive",
+            value: users.filter((u) => u.status === "Inactive").length,
+            color: "stat-red",
+          },
+          {
+            label: "Pending",
+            value: users.filter((u) => u.status === "Pending").length,
+            color: "stat-orange",
+          },
         ].map((stat, index) => (
-          <Card key={index} className="bg-gradient-card border-border shadow-soft">
+          <Card
+            key={index}
+            className="bg-gradient-card border-border shadow-soft"
+          >
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-foreground">{stat.value}</div>
+              <div className="text-2xl font-bold text-foreground">
+                {stat.value}
+              </div>
               <p className="text-sm text-muted-foreground">{stat.label}</p>
             </CardContent>
           </Card>
@@ -166,6 +287,45 @@ export default function Users() {
                 className="pl-10"
               />
             </div>
+            <Popover open={showDateFilter} onOpenChange={setShowDateFilter}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Filter className="h-4 w-4 mr-2" />
+                  {dateRange?.from
+                    ? dateRange?.to
+                      ? `${format(dateRange.from, "MMM dd")} - ${format(
+                          dateRange.to,
+                          "MMM dd"
+                        )}`
+                      : format(dateRange.from, "MMM dd, yyyy")
+                    : "Filter by date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={dateRange?.from}
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  numberOfMonths={2}
+                  className="pointer-events-auto"
+                />
+                <div className="p-3 border-t border-border">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setDateRange(undefined);
+                      setShowDateFilter(false);
+                    }}
+                    className="w-full"
+                  >
+                    Clear Filter
+                  </Button>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Users Table */}
@@ -183,15 +343,22 @@ export default function Users() {
               </TableHeader>
               <TableBody>
                 {filteredUsers.map((user) => (
-                  <TableRow key={user.id} className="hover:bg-muted/20 transition-colors">
+                  <TableRow
+                    key={user.id}
+                    className="hover:bg-muted/20 transition-colors"
+                  >
                     <TableCell>
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-white font-medium text-sm">
                           {user.avatar}
                         </div>
                         <div>
-                          <div className="font-medium text-foreground">{user.name}</div>
-                          <div className="text-sm text-muted-foreground">ID: {user.id}</div>
+                          <div className="font-medium text-foreground">
+                            {user.name}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            ID: {user.id}
+                          </div>
                         </div>
                       </div>
                     </TableCell>
@@ -245,13 +412,21 @@ export default function Users() {
             </Table>
           </div>
 
-          {filteredUsers.length === 0 && (
+          { filteredUsers.length === 0 && (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">No users found matching your search.</p>
+              <p className="text-muted-foreground">
+                No users found matching your search.
+              </p>
             </div>
           )}
         </CardContent>
       </Card>
+
+      <AddUserModal
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+        onAddUser={handleAddUser}
+      />
     </div>
-  )
+  );
 }
