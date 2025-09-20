@@ -130,10 +130,10 @@ export default function AddUserModal({ open, onOpenChange, onAddUser }: AddUserM
     }
 
     onAddUser(newUser)
-    toast({
-      title: "Success",
-      description: "User has been added successfully."
-    })
+    // toast({
+    //   title: "Success",
+    //   description: "User has been added successfully."
+    // })
     handleClose()
   }
 

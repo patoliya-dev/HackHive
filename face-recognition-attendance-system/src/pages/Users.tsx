@@ -42,7 +42,7 @@ import AddUserModal from "@/components/AddUserModal";
 import type { DateRange } from "react-day-picker";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
-import { addUser } from "@/service/employee";
+import { addUser, fetchAllEmployees } from "@/service/employee";
 import { useToast } from "@/hooks/use-toast";
 const humanConfig: any = {
   modelBasePath: "/models",
@@ -129,20 +129,23 @@ export default function Users() {
   const [showDateFilter, setShowDateFilter] = useState(false);
   const [human, setHuman] = useState(null);
     const { toast } = useToast()
+    const [dataChange, setDataChange] = useState(false);
+    console.log("users", users)
+    const [count, setCounts] = useState(0)
 
-  const filteredUsers = users.filter((user) => {
+  const filteredUsers = users?.filter((user) => {
     const matchesSearch =
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchTerm.toLowerCase());
+      user.email.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesDateRange =
-      !dateRange?.from ||
-      !dateRange?.to ||
-      (new Date(user.joinDate) >= dateRange.from &&
-        new Date(user.joinDate) <= dateRange.to);
+    // const matchesDateRange =
+    //   !dateRange?.from ||
+    //   !dateRange?.to ||
+    //   (new Date(user.joinDate) >= dateRange.from &&
+    //     new Date(user.joinDate) <= dateRange.to);
 
-    return matchesSearch && matchesDateRange;
+    return matchesSearch;
+    // return matchesSearch && matchesDateRange;
   });
 
    useEffect(() => {
@@ -182,6 +185,7 @@ export default function Users() {
     const response = await addUser(formData);
     console.log("resss", response)
     if(response.success) {
+      setDataChange(!dataChange)
       toast({
         title: response.message,
         variant: "default"
@@ -189,6 +193,13 @@ export default function Users() {
     }
     setShowAddModal(false);
   };
+
+  useEffect(() => {
+    fetchAllEmployees().then((res) => {
+      setUsers(res.employees);
+      setCounts(res.count)
+    });
+  }, [dataChange]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -240,22 +251,7 @@ export default function Users() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {[
-          { label: "Total Users", value: users.length, color: "stat-blue" },
-          {
-            label: "Active",
-            value: users.filter((u) => u.status === "Active").length,
-            color: "stat-green",
-          },
-          {
-            label: "Inactive",
-            value: users.filter((u) => u.status === "Inactive").length,
-            color: "stat-red",
-          },
-          {
-            label: "Pending",
-            value: users.filter((u) => u.status === "Pending").length,
-            color: "stat-orange",
-          },
+          { label: "Total Users", value: count || users.length, color: "stat-blue" },
         ].map((stat, index) => (
           <Card
             key={index}
@@ -287,7 +283,7 @@ export default function Users() {
                 className="pl-10"
               />
             </div>
-            <Popover open={showDateFilter} onOpenChange={setShowDateFilter}>
+            {/* <Popover open={showDateFilter} onOpenChange={setShowDateFilter}>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Filter className="h-4 w-4 mr-2" />
@@ -325,7 +321,7 @@ export default function Users() {
                   </Button>
                 </div>
               </PopoverContent>
-            </Popover>
+            </Popover> */}
           </div>
 
           {/* Users Table */}
@@ -334,10 +330,10 @@ export default function Users() {
               <TableHeader>
                 <TableRow className="bg-muted/50">
                   <TableHead>User</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Join Date</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Department</TableHead>
+                  {/* <TableHead>Status</TableHead> */}
+                  {/* <TableHead>Join Date</TableHead> */}
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -350,14 +346,19 @@ export default function Users() {
                     <TableCell>
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-white font-medium text-sm">
-                          {user.avatar}
+                          {
+                            <img
+                              src={`data:image/jpeg;base64,${user?.imageFile?.data}`}
+                              className="rounded-full w-10 h-10 object-cover"
+                            />
+                          }
                         </div>
                         <div>
                           <div className="font-medium text-foreground">
                             {user.name}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            ID: {user.id}
+                            ID: {user._id}
                           </div>
                         </div>
                       </div>
@@ -368,25 +369,17 @@ export default function Users() {
                           <Mail className="h-3 w-3 mr-1 text-muted-foreground" />
                           {user.email}
                         </div>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Phone className="h-3 w-3 mr-1" />
-                          {user.phone}
-                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge className={getRoleColor(user.role)}>
-                        {user.role}
+                        {user.department}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(user.status)}>
-                        {user.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
+
+                    {/* <TableCell className="text-muted-foreground">
                       {new Date(user.joinDate).toLocaleDateString()}
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -412,7 +405,7 @@ export default function Users() {
             </Table>
           </div>
 
-          { filteredUsers.length === 0 && (
+          {filteredUsers.length === 0 && (
             <div className="text-center py-8">
               <p className="text-muted-foreground">
                 No users found matching your search.
