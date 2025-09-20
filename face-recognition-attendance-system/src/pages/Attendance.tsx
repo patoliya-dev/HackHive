@@ -406,10 +406,9 @@ export default function Attendance() {
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
+              <TableBody ref={printRef}>
                 {filteredAttendance.map((record) => (
                   <TableRow
-                    ref={printRef}
                     key={record.id}
                     className="hover:bg-muted/20 transition-colors"
                   >
@@ -428,7 +427,7 @@ export default function Attendance() {
                             {record?.employeeId?.name}
                           </div>
                           <div className="text-sm text-muted-foreground">
-                            ID: {record.id}
+                            ID: {record._id}
                           </div>
                         </div>
                       </div>
