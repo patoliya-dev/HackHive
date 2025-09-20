@@ -12,3 +12,13 @@ export const markAttendance = async (employeeId) => {
     throw error; // Optionally rethrow or handle here
   }
 };
+
+export const fetchAttendance = async (startDate, endDate) => {
+  try {
+    const response = await axios.get(`http://localhost:3000/api/attendances?startDate=${startDate}&endDate=${endDate}`);
+    return response.data; // Return the data for further use
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    throw error; // Optionally rethrow or handle here
+  }
+};

@@ -1,38 +1,45 @@
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { 
-  Search, 
-  Calendar as CalendarIcon, 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
+import { useEffect, useRef, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Search,
+  Calendar as CalendarIcon,
+  Clock,
+  CheckCircle,
+  XCircle,
   AlertCircle,
   Download,
-  Filter
-} from "lucide-react"
+  Filter,
+} from "lucide-react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { format } from "date-fns"
-import { cn } from "@/lib/utils"
-import type { DateRange } from "react-day-picker"
+} from "@/components/ui/select";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import type { DateRange } from "react-day-picker";
+import { fetchAttendance } from "@/service/attendance";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 
 // Sample attendance data
 const initialAttendance = [
@@ -45,7 +52,7 @@ const initialAttendance = [
     status: "Present",
     hoursWorked: 8.5,
     overtime: 0.5,
-    avatar: "JD"
+    avatar: "JD",
   },
   {
     id: 2,
@@ -56,7 +63,7 @@ const initialAttendance = [
     status: "Present",
     hoursWorked: 8.5,
     overtime: 0.5,
-    avatar: "SW"
+    avatar: "SW",
   },
   {
     id: 3,
@@ -67,7 +74,7 @@ const initialAttendance = [
     status: "Late",
     hoursWorked: 7.75,
     overtime: 0,
-    avatar: "MC"
+    avatar: "MC",
   },
   {
     id: 4,
@@ -78,7 +85,7 @@ const initialAttendance = [
     status: "Absent",
     hoursWorked: 0,
     overtime: 0,
-    avatar: "ED"
+    avatar: "ED",
   },
   {
     id: 5,
@@ -89,7 +96,7 @@ const initialAttendance = [
     status: "Present",
     hoursWorked: 9.5,
     overtime: 1.5,
-    avatar: "RJ"
+    avatar: "RJ",
   },
   {
     id: 6,
@@ -100,82 +107,184 @@ const initialAttendance = [
     status: "Half Day",
     hoursWorked: 3.5,
     overtime: 0,
-    avatar: "LA"
-  }
-]
+    avatar: "LA",
+  },
+];
 
 export default function Attendance() {
-  const [attendance, setAttendance] = useState(initialAttendance)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
-  const [showDateFilter, setShowDateFilter] = useState(false)
-  
-  const filteredAttendance = attendance.filter(record => {
-    const matchesSearch = record.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "all" || record.status.toLowerCase() === statusFilter.toLowerCase()
-    const matchesDateRange = !dateRange?.from || !dateRange?.to || 
-      (new Date(record.date) >= dateRange.from && new Date(record.date) <= dateRange.to)
-    return matchesSearch && matchesStatus && matchesDateRange
-  })
+  const [attendance, setAttendance] = useState(initialAttendance);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+  const [showDateFilter, setShowDateFilter] = useState(false);
+
+  const filteredAttendance = attendance.filter((record) => {
+    const matchesSearch = record?.employeeId?.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesDateRange =
+      !dateRange?.from ||
+      !dateRange?.to ||
+      (new Date(record.date) >= dateRange.from &&
+        new Date(record.date) <= dateRange.to);
+    return matchesSearch && matchesDateRange;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Present":
-        return "bg-success text-success-foreground"
+        return "bg-success text-success-foreground";
       case "Absent":
-        return "bg-destructive text-destructive-foreground"
+        return "bg-destructive text-destructive-foreground";
       case "Late":
-        return "bg-warning text-warning-foreground"
+        return "bg-warning text-warning-foreground";
       case "Half Day":
-        return "bg-admin-primary text-white"
+        return "bg-admin-primary text-white";
       default:
-        return "bg-secondary text-secondary-foreground"
+        return "bg-secondary text-secondary-foreground";
     }
-  }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "Present":
-        return <CheckCircle className="h-4 w-4" />
+        return <CheckCircle className="h-4 w-4" />;
       case "Absent":
-        return <XCircle className="h-4 w-4" />
+        return <XCircle className="h-4 w-4" />;
       case "Late":
-        return <AlertCircle className="h-4 w-4" />
+        return <AlertCircle className="h-4 w-4" />;
       case "Half Day":
-        return <Clock className="h-4 w-4" />
+        return <Clock className="h-4 w-4" />;
       default:
-        return <Clock className="h-4 w-4" />
+        return <Clock className="h-4 w-4" />;
     }
-  }
+  };
 
-  const totalPresent = attendance.filter(a => a.status === "Present").length
-  const totalAbsent = attendance.filter(a => a.status === "Absent").length
-  const totalLate = attendance.filter(a => a.status === "Late").length
-  const attendanceRate = ((totalPresent / attendance.length) * 100).toFixed(1)
+  const totalPresent = attendance.filter((a) => a.status === "Present").length;
+  const totalAbsent = attendance.filter((a) => a.status === "Absent").length;
+  const totalLate = attendance.filter((a) => a.status === "Late").length;
+  const attendanceRate = ((totalPresent / attendance.length) * 100).toFixed(1);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Get today's date
+    const today = new Date();
+
+    // Get 7 days ago
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(today.getDate() - 7);
+
+    // Helper to format as YYYY-MM-DD
+    const formatDate = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0"); // months are 0-based
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    const todayStr = formatDate(today);
+    const sevenDaysAgoStr = formatDate(sevenDaysAgo);
+
+    console.log("Today:", todayStr); // e.g. "2025-09-19"
+    console.log("7 Days Ago:", sevenDaysAgoStr); // e.g. "2025-09-12"
+
+    const startDate = convertTODate(dateRange?.from || sevenDaysAgoStr);
+    const endDate = convertTODate(dateRange?.to || todayStr);
+    fetchAttendance(startDate, endDate).then((res) => {
+      console.log("sdfsdfsdfs", res.data);
+      setAttendance(res.data);
+      // setCounts(res.count)
+    });
+  }, [dateRange]);
+
+  const handleDownloadPdf = async () => {
+    if (!printRef.current) return;
+
+    // Take screenshot of the div
+    const canvas = await html2canvas(printRef.current, { scale: 2 });
+    const imgData = canvas.toDataURL("image/png");
+
+    // Create PDF
+    const pdf = new jsPDF("p", "mm", "a4");
+    const imgProps = pdf.getImageProperties(imgData);
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save("employees.pdf");
+  };
+
+  const convertTODate = (dateStr) => {
+    const date = new Date(dateStr);
+
+    // Convert to YYYY-MM-DD
+    const formatted = date.toISOString().split("T")[0];
+
+    return formatted;
+  };
+
+  const exportToCSV = (data: any[], filename = "employees.csv") => {
+    if (!data || !data.length) return;
+
+    const headers = Object.keys(data[0]);
+    const csvRows = [
+      headers.join(","), // header row first
+      ...data.map((row) =>
+        headers.map((field) => `"${(row as any)[field]}"`).join(",")
+      ),
+    ];
+
+    const csvString = csvRows.join("\n");
+    const blob = new Blob([csvString], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Attendance Management</h2>
-          <p className="text-muted-foreground">Track and monitor employee attendance</p>
+          <h2 className="text-2xl font-bold text-foreground">
+            Attendance Management
+          </h2>
+          <p className="text-muted-foreground">
+            Track and monitor employee attendance
+          </p>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline">
+          <Button
+            variant="outline"
+            onClick={() => {
+              handleDownloadPdf();
+            }}
+          >
             <Download className="h-4 w-4 mr-2" />
-            Export Report
+            Export Report (as PDF)
           </Button>
-          <Button className="bg-gradient-primary hover:opacity-90">
+          <Button
+            variant="outline"
+            onClick={() => {
+              exportToCSV(attendance);
+            }}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Export Report (as CSV)
+          </Button>
+          {/* <Button className="bg-gradient-primary hover:opacity-90">
             <Calendar className="h-4 w-4 mr-2" />
             Mark Attendance
-          </Button>
+          </Button> */}
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-gradient-card border-border shadow-soft">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -223,13 +332,13 @@ export default function Attendance() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
 
       {/* Attendance Table */}
       <Card className="bg-card border-border shadow-soft">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <CardTitle>Daily Attendance - January 20, 2024</CardTitle>
+            <CardTitle>Attendance</CardTitle>
             <div className="flex space-x-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -240,32 +349,19 @@ export default function Attendance() {
                   className="pl-10 w-64"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-40">
-                  <Filter className="h-4 w-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="present">Present</SelectItem>
-                  <SelectItem value="absent">Absent</SelectItem>
-                  <SelectItem value="late">Late</SelectItem>
-                  <SelectItem value="half day">Half Day</SelectItem>
-                </SelectContent>
-              </Select>
+
               <Popover open={showDateFilter} onOpenChange={setShowDateFilter}>
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm">
                     <CalendarIcon className="h-4 w-4 mr-2" />
-                    {dateRange?.from ? (
-                      dateRange?.to ? (
-                        `${format(dateRange.from, "MMM dd")} - ${format(dateRange.to, "MMM dd")}`
-                      ) : (
-                        format(dateRange.from, "MMM dd, yyyy")
-                      )
-                    ) : (
-                      "Date Range"
-                    )}
+                    {dateRange?.from
+                      ? dateRange?.to
+                        ? `${format(dateRange.from, "MMM dd")} - ${format(
+                            dateRange.to,
+                            "MMM dd"
+                          )}`
+                        : format(dateRange.from, "MMM dd, yyyy")
+                      : "Date Range"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="end">
@@ -279,12 +375,12 @@ export default function Attendance() {
                     className="pointer-events-auto"
                   />
                   <div className="p-3 border-t border-border">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => {
-                        setDateRange(undefined)
-                        setShowDateFilter(false)
+                        setDateRange(undefined);
+                        setShowDateFilter(false);
                       }}
                       className="w-full"
                     >
@@ -303,60 +399,50 @@ export default function Attendance() {
                 <TableRow className="bg-muted/50">
                   <TableHead>Employee</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead>Clock In</TableHead>
-                  <TableHead>Clock Out</TableHead>
-                  <TableHead>Hours Worked</TableHead>
-                  <TableHead>Overtime</TableHead>
+                  {/* <TableHead>Clock In</TableHead> */}
+                  {/* <TableHead>Clock Out</TableHead> */}
+                  {/* <TableHead>Hours Worked</TableHead> */}
+                  {/* <TableHead>Overtime</TableHead> */}
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredAttendance.map((record) => (
-                  <TableRow key={record.id} className="hover:bg-muted/20 transition-colors">
+                  <TableRow
+                    ref={printRef}
+                    key={record.id}
+                    className="hover:bg-muted/20 transition-colors"
+                  >
                     <TableCell>
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 rounded-full bg-gradient-primary flex items-center justify-center text-white font-medium text-sm">
-                          {record.avatar}
+                          {
+                            <img
+                              src={`data:image/jpeg;base64,${record?.imageFile?.data}`}
+                              className="rounded-full w-10 h-10 object-cover"
+                            />
+                          }
                         </div>
                         <div>
-                          <div className="font-medium text-foreground">{record.name}</div>
-                          <div className="text-sm text-muted-foreground">ID: {record.id}</div>
+                          <div className="font-medium text-foreground">
+                            {record?.employeeId?.name}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            ID: {record.id}
+                          </div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {new Date(record.date).toLocaleDateString()}
+                      {new Date(record?.modified).toLocaleDateString()}
                     </TableCell>
+
                     <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-foreground">{record.clockIn}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-foreground">{record.clockOut}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="font-medium text-foreground">
-                        {record.hoursWorked}h
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {record.overtime > 0 ? (
-                        <span className="text-admin-primary font-medium">
-                          +{record.overtime}h
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={`${getStatusColor(record.status)} flex items-center space-x-1 w-fit`}>
-                        {getStatusIcon(record.status)}
-                        <span>{record.status}</span>
+                      <Badge
+                        className={`bg-success text-success-foreground flex items-center space-x-1 w-fit`}
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                        <span>Present</span>
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -367,11 +453,13 @@ export default function Attendance() {
 
           {filteredAttendance.length === 0 && (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">No attendance records found matching your criteria.</p>
+              <p className="text-muted-foreground">
+                No attendance records found matching your criteria.
+              </p>
             </div>
           )}
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
