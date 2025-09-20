@@ -1,54 +1,83 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Users,
-  Calendar,
-  TrendingUp,
-  Activity,
-} from "lucide-react";
-
-const stats = [
-  {
-    title: "Total Users",
-    value: "2,847",
-    change: "+12%",
-    changeType: "positive" as const,
-    icon: Users,
-    color: "stat-blue",
-  },
-  {
-    title: "Active Sessions",
-    value: "1,234",
-    change: "+5%",
-    changeType: "positive" as const,
-    icon: Activity,
-    color: "stat-green",
-  },
-  {
-    title: "Attendance Rate",
-    value: "94.2%",
-    change: "-2%",
-    changeType: "negative" as const,
-    icon: Calendar,
-    color: "stat-orange",
-  },
-  {
-    title: "Growth Rate",
-    value: "18.5%",
-    change: "+8%",
-    changeType: "positive" as const,
-    icon: TrendingUp,
-    color: "stat-green",
-  },
-];
-
-interface StoredImage {
-  id: number;
-  file: File;
-  name: string;
-  embedding?: number[];
-}
+import { getDashboardData } from "@/service/attendance";
+import { Users, Calendar, TrendingUp, Activity } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function Dashboard() {
+  const [stats, setStats] = useState([]);
+
+  const xyz = [
+    {
+      title: "Total Users",
+      value: "2,847",
+      change: "+12%",
+      changeType: "positive" as const,
+      icon: Users,
+      color: "stat-blue",
+    },
+    {
+      title: "Daily Attendance",
+      value: "1,234",
+      change: "+5%",
+      changeType: "positive" as const,
+      icon: Activity,
+      color: "stat-green",
+    },
+    {
+      title: "Attendance Rate",
+      value: "94.2%",
+      change: "-2%",
+      changeType: "negative" as const,
+      icon: Calendar,
+      color: "stat-orange",
+    },
+    {
+      title: "Weekly Attendance",
+      value: "18.5%",
+      change: "+8%",
+      changeType: "positive" as const,
+      icon: TrendingUp,
+      color: "stat-green",
+    },
+  ];
+
+  const getData = async () => {
+    const dashboardData = await getDashboardData();
+    if (dashboardData) {
+      const newStats = [
+        {
+          title: "Total Attendance",
+          value: dashboardData?.totalAttendance,
+          icon: Users,
+          color: "stat-blue",
+        },
+        {
+          title: "Daily Attendance",
+          value: dashboardData?.dailyAttendance,
+          icon: Activity,
+          color: "stat-green",
+        },
+        {
+          title: "Attendance Rate",
+          value:
+            (dashboardData?.dailyAttendance / dashboardData?.weeklyAttendance) *
+            100,
+          icon: Calendar,
+          color: "stat-orange",
+        },
+        {
+          title: "Weekly Attendance",
+          value: dashboardData?.weeklyAttendance,
+          icon: TrendingUp,
+          color: "stat-green",
+        },
+      ];
+      setStats(newStats)
+    }
+  };
+  useEffect(() => {
+    getData();
+  }, []);
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
@@ -72,15 +101,6 @@ export default function Dashboard() {
                 <div className="text-2xl font-bold text-foreground">
                   {stat.value}
                 </div>
-                <p
-                  className={`text-xs ${
-                    stat.changeType === "positive"
-                      ? "text-success"
-                      : "text-destructive"
-                  }`}
-                >
-                  {stat.change} from last month
-                </p>
               </CardContent>
             </Card>
           );

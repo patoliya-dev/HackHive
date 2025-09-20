@@ -15,8 +15,7 @@ import Logo from "../assets/FaceHive.svg"
 const navigationItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Users", url: "/users", icon: Users },
-  { title: "Attendance", url: "/attendance-report", icon: Calendar },
-  { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Attendance", url: "/attendance-report", icon: Calendar }
 ]
 
 export function AdminSidebar() {

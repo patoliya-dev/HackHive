@@ -7,7 +7,6 @@ import { DashboardLayout } from "./components/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import Attendance from "./pages/Attendance";
-import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./context/AuthContext";
@@ -61,7 +60,6 @@ const App = () => (
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/users" element={<Users />} />
                     <Route path="/attendance-report" element={<Attendance />} />
-                    <Route path="/settings" element={<Settings />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </DashboardLayout>
