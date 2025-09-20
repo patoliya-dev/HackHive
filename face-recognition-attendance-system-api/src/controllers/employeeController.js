@@ -8,12 +8,13 @@ exports.getEmployee = async (req, res) => {
   try {
     const localDirectory = path.join(__dirname, "..", "..", "uploads");
     const { startDate, endDate } = req.query;
-    let dateFilter = {};
+    let dateFilter = {
+      isDeleted: false
+    };
     if (startDate || endDate) {
       dateFilter.createdAt = {};
       if (startDate) dateFilter.createdAt.$gte = new Date(startDate);
       if (endDate) dateFilter.createdAt.$lte = new Date(endDate);
-      dateFilter['isDeleted'] = false
     }
 
     const employees = await Employee.find(dateFilter, {
@@ -142,11 +143,18 @@ exports.deleteEmployee = async (req, res) => {
   try {
     const { employeeId } = req.query;
 
-    const employees = await Employee.findOneAndDelete({
+    const employees = await Employee.findOneAndUpdate({
       _id: employeeId,
+    }, {
+      isDeleted: true,
+      updatedAt: new Date(),
     });
 
-    res.json({ success: true, message: 'Delete employee successfully' });
+    if (!employees) {
+      res.json({ success: false, message: 'Failed to delete employee' });
+    } else {
+      res.json({ success: true, message: 'Delete employee successfully' });
+    }
   } catch (error) {
     res.status(400).json({ message: "Server Error" });
   }
