@@ -47,32 +47,37 @@ export default function Dashboard() {
       const newStats = [
         {
           title: "Total Attendance",
-          value: dashboardData?.totalAttendance,
+          value: dashboardData?.totalAttendance || 0,
           icon: Users,
           color: "stat-blue",
         },
         {
           title: "Daily Attendance",
-          value: dashboardData?.dailyAttendance,
+          value: dashboardData?.dailyAttendance || 0,
           icon: Activity,
           color: "stat-green",
         },
         {
           title: "Attendance Rate",
-          value:
-            (dashboardData?.dailyAttendance / dashboardData?.weeklyAttendance) *
-            100,
+          value: dashboardData?.weeklyAttendance
+            ? (
+                (dashboardData.dailyAttendance /
+                  dashboardData.weeklyAttendance) *
+                100
+              ).toFixed(0) + "%"
+            : "0%",
+
           icon: Calendar,
           color: "stat-orange",
         },
         {
           title: "Weekly Attendance",
-          value: dashboardData?.weeklyAttendance,
+          value: dashboardData?.weeklyAttendance || 0,
           icon: TrendingUp,
           color: "stat-green",
         },
       ];
-      setStats(newStats)
+      setStats(newStats);
     }
   };
   useEffect(() => {
