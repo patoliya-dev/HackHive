@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AddAttendance from "./pages/AddAttendance";
 
 const queryClient = new QueryClient();
 
@@ -47,6 +48,7 @@ const App = () => (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+           <Route path="/attendance" element={<AddAttendance />} />
           <Route path="/login" element={<Login />} />
           
           {/* Protected routes */}
@@ -58,7 +60,7 @@ const App = () => (
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/users" element={<Users />} />
-                    <Route path="/attendance" element={<Attendance />} />
+                    <Route path="/attendance-report" element={<Attendance />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
