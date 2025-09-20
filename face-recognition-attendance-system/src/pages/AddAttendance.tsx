@@ -140,8 +140,13 @@ export default function AddAttendance() {
                 className="bg-gradient-primary hover:opacity-90"
                 disabled={uploadImageProcessing}
               >
-                Choose Files{" "}
-                {uploadImageProcessing && <span className="ms-2 loader"></span>}
+                {uploadImageProcessing ? (
+                  <>
+                    Processing <span className="loader"></span>
+                  </>
+                ) : (
+                  "Choose Files"
+                )}
               </Button>
             </div>
           </CardContent>
